@@ -1,0 +1,28 @@
+
+> towntrade@1.0.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3001
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.8s
+ ○ Compiling /api/auth/challenge ...
+ ✓ Compiled /api/auth/challenge in 737ms (64 modules)
+ GET /api/auth/challenge 200 in 2309ms
+ ✓ Compiled in 1619ms (64 modules)
+ ✓ Compiled /api/auth/login in 207ms (82 modules)
+ POST /api/auth/login 200 in 1961ms
+ ✓ Compiled in 1857ms (82 modules)
+ ✓ Compiled in 64ms (82 modules)
+ ✓ Compiled /api/users/me in 88ms (84 modules)
+ PATCH /api/users/me 200 in 225ms
+ ✓ Compiled /api/community/pulse in 162ms (86 modules)
+ GET /api/community/pulse 200 in 299ms
+ ✓ Compiled in 195ms (86 modules)
+ ✓ Compiled in 68ms (86 modules)
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 701ms (73 modules)
+ ○ Compiling /profile ...

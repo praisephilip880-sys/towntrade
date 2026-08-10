@@ -29,3 +29,6 @@ yarn-error.log*
 # env
 .env*.local
 # runtime logs
+dev.log
+server.log
+*.log

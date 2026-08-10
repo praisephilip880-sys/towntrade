@@ -1,0 +1,30 @@
+# Render blueprint — deploy TownTrade with a persistent disk for the SQLite DB.
+# In Render: New + -> Blueprint -> select this repo. Render reads this file.
+# Note: persistent disks require a paid web-service plan (Starter, ~$7/mo).
+services:
+  - type: web
+    name: towntrade
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /marketplace
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: DATA_DIR
+        value: /var/data
+      # Fill these in the Render dashboard (Settings -> Environment) — never commit keys:
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # Your live URL, e.g. https://towntrade.onrender.com (no trailing slash)
+      - key: APP_URL
+        sync: false
+    disk:
+      name: sqlite-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -26,3 +26,29 @@
  ○ Compiling /middleware ...
  ✓ Compiled /middleware in 701ms (73 modules)
  ○ Compiling /profile ...
+ ✓ Compiled /profile in 13.9s (692 modules)
+ PATCH /api/users/me 200 in 1783ms
+ GET /profile?tab=payout 200 in 14186ms
+ ✓ Compiled /api/stripe/onboarding/status in 407ms (375 modules)
+ ✓ Compiled (571 modules)
+ GET /api/users/me 200 in 1517ms
+ GET /api/users/me 200 in 1521ms
+ GET /icon.svg?96bc78302d6eb5b0 200 in 1591ms
+ GET /api/stripe/onboarding/status 200 in 4164ms
+ GET /api/stripe/onboarding/status 200 in 4173ms
+ GET /api/community/pulse 200 in 36ms
+ GET /api/community/pulse 200 in 32ms
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 1221ms (607 modules)
+ ✓ Compiled /chat in 389ms (614 modules)
+ GET /api/community/pulse 200 in 43ms
+ GET /api/community/pulse 200 in 49ms
+ GET /api/community/pulse 200 in 21ms
+ GET /api/community/pulse 200 in 22ms
+ GET /api/community/pulse 200 in 22ms
+ GET /api/community/pulse 200 in 21ms
+ GET /api/community/pulse 200 in 21ms
+ GET /api/community/pulse 200 in 26ms
+ GET /api/community/pulse 200 in 23ms
+ GET /api/community/pulse 200 in 43ms
+ GET /api/community/pulse 200 in 23ms

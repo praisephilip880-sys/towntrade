@@ -209,6 +209,32 @@ cp .env.example .env.local   # then fill in your keys
 
 **Test card:** `4242 4242 4242 4242`, any future expiry, any CVC. Express onboarding test data: any email, SSN `000-00-0000`, test bank routing `110000000` / account `000123456789`.
 
+## 🚢 Deploying to Render (persistent disk)
+
+TownTrade needs a **writable disk** for its SQLite database, so deploy it to a platform with a persistent volume — **Render** is the smoothest (GitHub-connected, long-running Node server). Vercel's serverless filesystem is read-only and can't host the database file.
+
+The repo ships with a **`render.yaml` blueprint** — in Render: **New + → Blueprint** → pick this repo, and the service, disk and env vars are pre-configured.
+
+1. Set the service plan to **Starter** (~$7/mo — persistent disks aren't available on the free tier).
+2. In **Settings → Environment**, add:
+   - `STRIPE_SECRET_KEY` — your `sk_test_…` value
+   - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — your `pk_test_…` value
+   - `APP_URL` — your live URL, e.g. `https://towntrade.onrender.com` (no trailing slash)
+   - `STRIPE_WEBHOOK_SECRET` — see below
+3. The blueprint mounts a 1 GB disk at `/var/data` and sets `DATA_DIR=/var/data`, so the database persists across deploys. Locally, `DATA_DIR` is optional and defaults to `./data`.
+
+### Connecting the Stripe webhook
+
+Once the site is live, Stripe calls your server on payment/onboarding events:
+
+1. Open **https://dashboard.stripe.com/webhooks** (Test mode) → **Add endpoint**.
+2. URL: `https://YOUR-DOMAIN/api/stripe/webhook`
+3. Events: `checkout.session.completed`, `account.updated`, `charge.refunded`
+4. Copy the **`whsec_…` signing secret** into the `STRIPE_WEBHOOK_SECRET` env var on Render.
+5. Deploy again (or restart) and the escrow + onboarding flows are fully event-driven.
+
+Test the live flow with card `4242 4242 4242 4242` and Express onboarding test data (SSN `000-00-0000`, routing `110000000` / account `000123456789`).
+
 ## 🔐 Security Notes (demo)
 
 - All passwords are scrypt-hashed; sessions are random 256-bit tokens in httpOnly cookies.

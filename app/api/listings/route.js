@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { fetchFeedListings } from '@/lib/listings';
 import { isCategory, isSortKey } from '@/lib/types';
 import { estimateBytes, MAX_IMAGE_BYTES, MAX_IMAGES } from '@/lib/image';
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
     const url = new URL(req.url);
     const q = url.searchParams.get('q') ?? '';

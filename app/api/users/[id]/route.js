@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { fetchReviewsForUser, fetchUserRating } from '@/lib/listings';
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req, { params }) {
     const id = Number(params.id);
     if (!Number.isInteger(id) || id <= 0) {

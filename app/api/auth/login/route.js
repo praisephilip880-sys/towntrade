@@ -4,6 +4,8 @@ import { verifyChallenge } from '@/lib/challenge';
 import { recordLoginEvent } from '@/lib/community';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req) {
     let body;
     try {

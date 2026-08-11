@@ -3,6 +3,10 @@ import { ToastProvider } from '@/components/Toaster';
 import { AuthProvider } from '@/components/AuthProvider';
 import SafetyWidget from '@/components/SafetyWidget';
 import './globals.css';
+// This app is fully session-driven: every page needs live server data, so
+// nothing may be statically prerendered (prerendering would run DB queries at
+// build time and fail). This also lets it build on any platform (Vercel/Render).
+export const dynamic = 'force-dynamic';
 export const metadata = {
     title: 'TownTrade — Trade, Earn, and Connect Right in Your Neighborhood',
     description: 'TownTrade is a secure local community marketplace. List items and services, chat securely, and trade safely with verified neighbors.',

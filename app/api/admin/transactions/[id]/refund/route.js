@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { refundStripePayment } from '@/lib/escrow';
+export const dynamic = 'force-dynamic';
+
 
 /**
  * Admin: refund a transaction — cancels the purchase, refunds the Stripe

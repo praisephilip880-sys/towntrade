@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth';
 import { db } from '@/lib/db';
+export const dynamic = 'force-dynamic';
+
 
 export async function GET() {
     const guard = adminOnly();

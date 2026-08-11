@@ -12,7 +12,7 @@ All data lives in a local SQLite database (`data/towntrade.db`) that is auto-cre
 
 ## 🚀 Quick Start
 
-Requirements: **Node.js 23.4+** (Node 24 recommended) and npm.
+Requirements: **Node.js 20+**. For the default local SQLite mode use **Node.js 23.4+** (needed for the built-in `node:sqlite`); on serverless hosts like Vercel the app uses the hosted database mode instead, which works on Node 20+.
 
 ```bash
 npm install
@@ -234,6 +234,21 @@ Once the site is live, Stripe calls your server on payment/onboarding events:
 5. Deploy again (or restart) and the escrow + onboarding flows are fully event-driven.
 
 Test the live flow with card `4242 4242 4242 4242` and Express onboarding test data (SSN `000-00-0000`, routing `110000000` / account `000123456789`).
+
+## 🚢 Deploying to Vercel (hosted database)
+
+You **can** run TownTrade on Vercel — the app automatically switches to a **hosted cloud database** (Turso/libSQL, free tier) when the environment provides it, because Vercel's serverless filesystem is read-only and can't persist the SQLite file. Set two environment variables and everything works (auth, listings, chats, escrow, admin):
+
+1. **Create a free Turso database** at **https://turso.tech** → *Create database* (name it `towntrade`). Turso shows you two values: `TURSO_DATABASE_URL` (a `libsql://…` URL) and `TURSO_AUTH_TOKEN`.
+2. On Vercel: **Project → Settings → Environment Variables** → add:
+   - `TURSO_DATABASE_URL` = your `libsql://…` value
+   - `TURSO_AUTH_TOKEN` = the token
+   - plus your Stripe keys: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `APP_URL` = your `https://your-app.vercel.app`
+3. **Redeploy** (Deployments → latest commit → ⋯ → Redeploy).
+
+On first boot the cloud database is auto-created with the full schema and demo data. Local development is unaffected — without those env vars it still uses the `data/towntrade.db` file. Connect the Stripe webhook to `https://YOUR-DOMAIN/api/stripe/webhook` (events `checkout.session.completed`, `account.updated`, `charge.refunded`) for bulletproof escrow/onboarding.
+
+> **Why this works:** `lib/db.js` presents one interface (`prepare/exec/transaction`) over two backends — Node's built-in SQLite locally, and `@libsql/client` against Turso when `TURSO_DATABASE_URL` is set. No application code changes; queries are identical.
 
 ## 🔐 Security Notes (demo)
 

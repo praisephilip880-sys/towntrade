@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser, unauthorized } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getStripe, stripeConfigured } from '@/lib/stripe';
+export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/stripe/onboarding/status

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser, unauthorized } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { analyzeMessage, botReplyFor, BOT_USER_ID, RESTRICTION_HOURS } from '@/lib/safety';
+export const dynamic = 'force-dynamic';
+
 function isParticipant(chatId, userId) {
     const row = db
         .prepare('SELECT id FROM chats WHERE id = ? AND (buyer_id = ? OR seller_id = ?)')

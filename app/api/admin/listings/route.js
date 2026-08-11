@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth';
 import { db } from '@/lib/db';
+export const dynamic = 'force-dynamic';
+
 
 /** Admin: fetch every listing (any user, any status) with the owner's details. */
 export async function GET(req) {

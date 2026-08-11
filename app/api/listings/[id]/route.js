@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { fetchListingById } from '@/lib/listings';
 import { isCategory } from '@/lib/types';
 import { estimateBytes, MAX_IMAGE_BYTES, MAX_IMAGES } from '@/lib/image';
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req, { params }) {
     const id = Number(params.id);
     const listing = Number.isInteger(id) ? fetchListingById(id) : null;

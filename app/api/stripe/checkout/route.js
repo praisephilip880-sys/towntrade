@@ -3,6 +3,8 @@ import { getCurrentUser, unauthorized } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { fetchListingById } from '@/lib/listings';
 import { getStripe, stripeConfigured, appUrl, STRIPE_CURRENCY } from '@/lib/stripe';
+export const dynamic = 'force-dynamic';
+
 
 /**
  * POST /api/stripe/checkout  { listingId }

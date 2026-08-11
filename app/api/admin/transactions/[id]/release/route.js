@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { releaseEscrowToSeller } from '@/lib/escrow';
+export const dynamic = 'force-dynamic';
+
 
 /**
  * Admin: force-complete an escrow_hold transaction, releasing the 95% balance

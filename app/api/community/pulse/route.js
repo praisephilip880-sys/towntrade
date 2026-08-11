@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchCommunityStats, fetchPulse } from '@/lib/community';
+export const dynamic = 'force-dynamic';
+
 
 /** Public live board data: real stats, recent sign-ins, and revenue over time. */
 export async function GET(req) {

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser, unauthorized } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { fetchListingById } from '@/lib/listings';
+export const dynamic = 'force-dynamic';
+
 export async function POST(_req, { params }) {
     const user = getCurrentUser();
     if (!user)

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth';
 import { db } from '@/lib/db';
+export const dynamic = 'force-dynamic';
+
 
 /** Admin: lift a Safety Bot selling restriction on any account. */
 export async function DELETE(_req, { params }) {

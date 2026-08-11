@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth';
 import { db } from '@/lib/db';
+export const dynamic = 'force-dynamic';
+
 
 /** Admin: fetch every transaction with the listing, buyer and seller details. */
 export async function GET(req) {

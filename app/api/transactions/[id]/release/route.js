@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser, unauthorized } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { releaseEscrowToSeller } from '@/lib/escrow';
+export const dynamic = 'force-dynamic';
+
 
 const COMPLETE_MESSAGE = 'Transaction Complete! 5% platform fee saved, 95% sent to seller.';
 

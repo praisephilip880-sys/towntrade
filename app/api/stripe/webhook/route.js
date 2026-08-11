@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getStripe, stripeConfigured } from '@/lib/stripe';
 import { finalizePaidSession } from '@/lib/escrow';
+export const dynamic = 'force-dynamic';
+
 
 /**
  * POST /api/stripe/webhook

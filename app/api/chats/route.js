@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser, unauthorized } from '@/lib/auth';
 import { db } from '@/lib/db';
+export const dynamic = 'force-dynamic';
+
 const CHAT_SELECT = `
   SELECT
     c.id, c.listing_id AS listingId, c.buyer_id AS buyerId, c.seller_id AS sellerId, c.updated_at AS updatedAt,

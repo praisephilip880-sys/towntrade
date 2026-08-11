@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminOnly } from '@/lib/auth';
 import { db } from '@/lib/db';
+export const dynamic = 'force-dynamic';
+
 
 /** Admin: fetch every registered user (excludes the Safety Bot) with marketplace stats. */
 export async function GET(req) {

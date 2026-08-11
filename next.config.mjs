@@ -6,11 +6,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    // The cloud-database worker (lib/db.worker.cjs) is spawned by filesystem
-    // path at runtime, so the file-tracer must be told to ship it (and the ws
-    // polyfill it uses) with every serverless function on Vercel.
+    // The cloud-database worker is spawned as an inline eval string, so its
+    // runtime imports ('ws' for the WebSocket polyfill) are invisible to the
+    // file tracer — explicitly ship them with every serverless function.
     outputFileTracingIncludes: {
-      '*': ['./lib/db.worker.cjs', './node_modules/ws/**/*'],
+      '*': ['./node_modules/ws/**/*'],
     },
   },
 };

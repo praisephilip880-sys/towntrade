@@ -13,6 +13,8 @@ export async function GET() {
   let scheme = 'none';
   try { scheme = new URL(url).protocol.replace(':', ''); } catch { /* keep 'none' */ }
 
+  const startupError = globalThis.__towntradeDbStartupError || null;
+
   try {
     const row = db.prepare('SELECT COUNT(*) AS n FROM users').get();
     return NextResponse.json({
@@ -21,6 +23,7 @@ export async function GET() {
       urlScheme: scheme,
       tokenSet: hasToken,
       users: row ? row.n : null,
+      startupError,
       message: 'Database connection works.',
     });
   } catch (error) {
@@ -32,6 +35,7 @@ export async function GET() {
       urlHost: (() => { try { return new URL(url).host; } catch { return '(invalid URL)'; } })(),
       message: 'Database connection FAILED.',
       error: String(error && error.message || error),
+      startupError,
     }, { status: 200 });
   }
 }

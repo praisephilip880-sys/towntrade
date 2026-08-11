@@ -14,6 +14,22 @@ export async function GET() {
   try { scheme = new URL(url).protocol.replace(':', ''); } catch { /* keep 'none' */ }
 
   const startupError = globalThis.__towntradeDbStartupError || null;
+  const workerErrors = (globalThis.__towntradeWorkerErrors || []).slice(-5);
+
+  // Environment facts that explain WebSocket vs HTTP failures on serverless.
+  const env = {
+    node: process.version,
+    globalWebSocket: typeof WebSocket,
+    wsRequire: (() => { try { require('ws'); return 'ok'; } catch (e) { return `fail: ${String(e && e.message || e).slice(0, 120)}`; } })(),
+    libsqlRequire: (() => { try { require('@libsql/client/web'); return 'ok'; } catch (e) { return `fail: ${String(e && e.message || e).slice(0, 120)}`; } })(),
+    workerFile: (() => {
+      const fs = require('fs');
+      const path = require('path');
+      const p = path.join(process.cwd(), 'lib', 'db.worker.cjs');
+      return fs.existsSync(p) ? 'exists' : 'MISSING';
+    })(),
+    cwd: process.cwd(),
+  };
 
   try {
     const row = db.prepare('SELECT COUNT(*) AS n FROM users').get();
@@ -22,8 +38,11 @@ export async function GET() {
       mode: url ? 'remote (Turso)' : 'local (SQLite file)',
       urlScheme: scheme,
       tokenSet: hasToken,
+      urlHost: (() => { try { return new URL(url).host; } catch { return '(invalid URL)'; } })(),
       users: row ? row.n : null,
       startupError,
+      workerErrors,
+      env,
       message: 'Database connection works.',
     });
   } catch (error) {
@@ -36,6 +55,8 @@ export async function GET() {
       message: 'Database connection FAILED.',
       error: String(error && error.message || error),
       startupError,
+      workerErrors,
+      env,
     }, { status: 200 });
   }
 }

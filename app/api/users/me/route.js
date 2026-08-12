@@ -33,11 +33,33 @@ export async function PATCH(req) {
             params.push(body.avatar);
         }
     }
+    // Device coordinates (set once at registration, updatable from the profile).
+    if (typeof body.lat === 'number' && Number.isFinite(body.lat) && Math.abs(body.lat) <= 90
+        && typeof body.lng === 'number' && Number.isFinite(body.lng) && Math.abs(body.lng) <= 180) {
+        updates.push('lat = ?');
+        params.push(body.lat);
+        updates.push('lng = ?');
+        params.push(body.lng);
+        if (body.autoVerify === true) {
+            updates.push('location_verified = ?');
+            params.push(1);
+        }
+    }
+    // Buyer/Seller hub preference.
+    if (body.role === 'buyer' || body.role === 'seller' || body.role === 'both') {
+        updates.push('role = ?');
+        params.push(body.role);
+    }
+    // Browser-notification opt-in flag.
+    if (typeof body.notificationsEnabled === 'boolean') {
+        updates.push('notifications_enabled = ?');
+        params.push(body.notificationsEnabled ? 1 : 0);
+    }
     if (updates.length) {
         db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params, user.id);
     }
     const row = db
-        .prepare('SELECT full_name, location_verified, bank_connected, avatar FROM users WHERE id = ?')
+        .prepare('SELECT full_name, location_verified, bank_connected, avatar, role, notifications_enabled FROM users WHERE id = ?')
         .get(user.id);
     return NextResponse.json({
         user: {
@@ -46,6 +68,8 @@ export async function PATCH(req) {
             locationVerified: row.location_verified === 1,
             bankConnected: row.bank_connected === 1,
             avatar: row.avatar ?? null,
+            role: row.role ?? 'both',
+            notificationsEnabled: row.notifications_enabled === 1,
         },
     });
 }

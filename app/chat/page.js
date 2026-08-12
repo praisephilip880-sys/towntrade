@@ -16,7 +16,7 @@ export default async function ChatPage({ searchParams }) {
          c.id, c.listing_id AS listingId, c.buyer_id AS buyerId, c.seller_id AS sellerId, c.updated_at AS updatedAt,
          l.title AS listingTitle, l.price AS listingPrice,
          (SELECT li.data_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.position ASC, li.id ASC LIMIT 1) AS listingImage,
-         u.id AS otherId, u.full_name AS otherName, u.neighborhood AS otherNeighborhood, u.location_verified AS otherVerified,
+         u.id AS otherId, u.full_name AS otherName, u.neighborhood AS otherNeighborhood, u.location_verified AS otherVerified, u.is_admin AS otherIsAdmin,
          (SELECT m.content FROM messages m WHERE m.chat_id = c.id ORDER BY m.id DESC LIMIT 1) AS lastMessage,
          (SELECT m.created_at FROM messages m WHERE m.chat_id = c.id ORDER BY m.id DESC LIMIT 1) AS lastMessageAt
        FROM chats c
@@ -35,6 +35,7 @@ export default async function ChatPage({ searchParams }) {
         otherName: c.otherName,
         otherNeighborhood: c.otherNeighborhood,
         otherVerified: c.otherVerified === 1,
+        otherIsAdmin: c.otherIsAdmin === 1,
         lastMessage: c.lastMessage,
         lastMessageAt: c.lastMessageAt,
     }));

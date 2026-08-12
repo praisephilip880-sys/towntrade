@@ -249,7 +249,10 @@ export default function ChatApp({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-sm font-bold text-charcoal-950">{c.otherName}</span>
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-sm font-bold text-charcoal-950">{c.otherIsAdmin ? 'TownTrade Admin' : c.otherName}</span>
+                        {c.otherIsAdmin && <span className="shrink-0 rounded-full bg-charcoal-950 px-1.5 py-0.5 text-[9px] font-black uppercase text-white">Admin</span>}
+                      </span>
                       {c.lastMessageAt && (
                         <span className="shrink-0 text-[10px] font-medium text-charcoal-400">{timeAgo(c.lastMessageAt)}</span>
                       )}
@@ -293,13 +296,14 @@ export default function ChatApp({
                     <path d="M19 12H5m6 6-6-6 6-6" />
                   </svg>
                 </button>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 text-sm font-bold text-white">
-                  {initials(active.otherName)}
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${active.otherIsAdmin ? 'bg-charcoal-950' : 'bg-gradient-to-br from-emerald-400 to-emerald-700'}`}>
+                  {initials(active.otherIsAdmin ? 'TownTrade Admin' : active.otherName)}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-1.5 text-sm font-bold text-charcoal-950">
-                    {active.otherName}
-                    {active.otherVerified && <VerifiedBadge />}
+                    {active.otherIsAdmin ? 'TownTrade Admin' : active.otherName}
+                    {active.otherIsAdmin && <span className="rounded-full bg-charcoal-950 px-2 py-0.5 text-[9px] font-black uppercase text-white">Admin</span>}
+                    {!active.otherIsAdmin && active.otherVerified && <VerifiedBadge />}
                   </p>
                   <p className="truncate text-xs text-charcoal-400">
                     {active.otherNeighborhood} · chatting about{' '}

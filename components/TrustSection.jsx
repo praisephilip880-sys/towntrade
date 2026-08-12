@@ -25,6 +25,11 @@ const TRUST_CARDS = [
         title: 'Flat 5% — that is it',
         body: 'No listing fees, no hidden charges. Sellers keep 95% of every sale, paid straight to their bank. Simple, honest, transparent.',
     },
+    {
+        icon: <span className="text-lg">🏦</span>,
+        title: 'Pay by card or OPay',
+        body: 'No card? Pay with a local OPay transfer to the platform account — the seller only gets paid after you confirm delivery. Works for everyone.',
+    },
 ];
 
 export default function TrustSection() {
@@ -44,7 +49,7 @@ export default function TrustSection() {
                     </p>
                 </div>
 
-                <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
                     {TRUST_CARDS.map((c) => (
                         <div
                             key={c.title}

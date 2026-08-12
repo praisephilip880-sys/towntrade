@@ -19,6 +19,10 @@ export async function POST(req) {
     const password = typeof body.password === 'string' ? body.password : '';
     const neighborhood = typeof body.neighborhood === 'string' ? body.neighborhood.trim() : '';
     const locationVerified = body.locationVerified === true;
+    // Real-device coordinates captured from the browser (optional but encouraged).
+    const lat = typeof body.lat === 'number' && Number.isFinite(body.lat) && Math.abs(body.lat) <= 90 ? body.lat : null;
+    const lng = typeof body.lng === 'number' && Number.isFinite(body.lng) && Math.abs(body.lng) <= 180 ? body.lng : null;
+    const locationFromDevice = lat != null && lng != null;
     // Safety Bot human check (placeholder security, replaced later).
     if (!verifyChallenge(body.challengeId, body.answer)) {
         return NextResponse.json({ error: 'Wrong answer to the Safety Bot check. Please try again with a new question.' }, { status: 400 });
@@ -40,9 +44,9 @@ export async function POST(req) {
         return NextResponse.json({ error: 'An account with this email already exists. Try signing in.' }, { status: 409 });
     }
     const result = db
-        .prepare(`INSERT INTO users (full_name, email, password_hash, neighborhood, location_verified, bank_connected, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, ?)`)
-        .run(fullName, email, hashPassword(password), neighborhood, locationVerified ? 1 : 0, new Date().toISOString());
+        .prepare(`INSERT INTO users (full_name, email, password_hash, neighborhood, location_verified, lat, lng, bank_connected, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`)
+        .run(fullName, email, hashPassword(password), neighborhood, locationVerified ? 1 : 0, lat, lng, new Date().toISOString());
     const userId = Number(result.lastInsertRowid);
 
     // Growing community: once registered users pass the threshold, demo

@@ -20,10 +20,13 @@ export async function POST(_req, { params }) {
   }
   const tx = db
     .prepare(`SELECT id, buyer_id AS buyerId, seller_id AS sellerId, amount, status,
-         stripe_payment_intent_id AS paymentIntentId
+         payment_method AS paymentMethod, stripe_payment_intent_id AS paymentIntentId
        FROM transactions WHERE id = ?`)
     .get(id);
   if (!tx) return NextResponse.json({ error: 'Transaction not found.' }, { status: 404 });
+  if (tx.paymentMethod === 'opay') {
+    return NextResponse.json({ error: 'This is an OPay local payment — complete it from the OPay Payouts tab instead.' }, { status: 400 });
+  }
   if (tx.status !== 'escrow_hold') {
     return NextResponse.json({ error: 'This transaction is already completed.' }, { status: 400 });
   }

@@ -4,11 +4,12 @@ import AdminDashboard from '@/components/AdminDashboard';
 import { requireAdmin } from '@/lib/auth';
 import { fetchPulse } from '@/lib/community';
 import { db } from '@/lib/db';
+import { fetchAllOpayPayments, fetchRefundRequests } from '@/lib/opay';
 
 export default async function AdminPage({ searchParams }) {
     const user = requireAdmin();
     const rawTab = searchParams.tab;
-    const initialTab = typeof rawTab === 'string' && ['overview', 'listings', 'transactions', 'users'].includes(rawTab)
+    const initialTab = typeof rawTab === 'string' && ['overview', 'listings', 'transactions', 'opay', 'refunds', 'users'].includes(rawTab)
         ? rawTab
         : 'overview';
 
@@ -57,7 +58,7 @@ export default async function AdminPage({ searchParams }) {
 
     const transactions = db
         .prepare(`SELECT
-         t.id, t.amount, t.status, t.created_at AS createdAt, t.completed_at AS completedAt,
+         t.id, t.amount, t.status, t.payment_method AS paymentMethod, t.created_at AS createdAt, t.completed_at AS completedAt,
          t.listing_id AS listingId, l.title AS listingTitle, l.category AS listingCategory,
          (SELECT li.data_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.position ASC, li.id ASC LIMIT 1) AS listingImage,
          b.id AS buyerId, b.full_name AS buyerName, b.email AS buyerEmail,
@@ -76,6 +77,7 @@ export default async function AdminPage({ searchParams }) {
             listingImage: r.listingImage,
             amount: r.amount,
             status: r.status,
+            paymentMethod: r.paymentMethod ?? 'stripe',
             createdAt: r.createdAt,
             completedAt: r.completedAt,
             buyer: { id: r.buyerId, fullName: r.buyerName, email: r.buyerEmail },
@@ -114,8 +116,11 @@ export default async function AdminPage({ searchParams }) {
             reviewCount: r.reviewCount,
         }));
 
+    const opayPayments = fetchAllOpayPayments();
+    const refunds = fetchRefundRequests();
+
     return _jsxs("div", { className: "min-h-screen bg-charcoal-50/30", children: [
         _jsx(Navbar, { user }),
-        _jsx("main", { className: "py-8", children: _jsx(AdminDashboard, { user, initial: { overview, listings, transactions, users }, initialTab }) }),
+        _jsx("main", { className: "py-8", children: _jsx(AdminDashboard, { user, initial: { overview, listings, transactions, users, opayPayments, refunds }, initialTab }) }),
     ] });
 }

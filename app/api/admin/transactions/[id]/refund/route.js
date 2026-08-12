@@ -22,12 +22,16 @@ export async function POST(_req, { params }) {
   const tx = db
     .prepare(`SELECT id, listing_id AS listingId, buyer_id AS buyerId, seller_id AS sellerId,
          amount, status, created_at AS createdAt,
+         payment_method AS paymentMethod,
          stripe_checkout_session_id AS checkoutSessionId,
          stripe_payment_intent_id AS paymentIntentId,
          stripe_transfer_id AS transferId
        FROM transactions WHERE id = ?`)
     .get(id);
   if (!tx) return NextResponse.json({ error: 'Transaction not found.' }, { status: 404 });
+  if (tx.paymentMethod === 'opay') {
+    return NextResponse.json({ error: 'This is an OPay local payment — handle refunds from the Refunds tab instead.' }, { status: 400 });
+  }
   if (tx.status !== 'escrow_hold') {
     return NextResponse.json({ error: 'Only escrow_hold transactions can be refunded.' }, { status: 400 });
   }

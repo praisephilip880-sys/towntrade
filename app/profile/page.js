@@ -4,6 +4,7 @@ import ProfileDashboard from '@/components/ProfileDashboard';
 import { requireUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { fetchFeedListings, fetchReviewsForUser, fetchUserRating } from '@/lib/listings';
+import { fetchSellerPayments } from '@/lib/opay';
 import { CATEGORY_LABELS } from '@/lib/safety';
 export default async function ProfilePage({ searchParams }) {
     const user = requireUser();
@@ -17,10 +18,12 @@ export default async function ProfilePage({ searchParams }) {
     const txRows = db
         .prepare(`SELECT
          t.id, t.listing_id AS listingId, t.buyer_id AS buyerId, t.seller_id AS sellerId,
-         t.amount, t.status, t.created_at AS createdAt, t.completed_at AS completedAt,
+         t.amount, t.status, t.payment_method AS paymentMethod, t.created_at AS createdAt, t.completed_at AS completedAt,
          l.title AS listingTitle,
          (SELECT li.data_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.position ASC, li.id ASC LIMIT 1) AS listingImage,
-         u1.full_name AS buyerName, u2.full_name AS sellerName
+         u1.full_name AS buyerName, u2.full_name AS sellerName,
+         (SELECT p.id FROM opay_payments p WHERE p.transaction_id = t.id LIMIT 1) AS opayPaymentId,
+         (SELECT p.status FROM opay_payments p WHERE p.transaction_id = t.id LIMIT 1) AS opayStatus
        FROM transactions t
        JOIN listings l ON l.id = t.listing_id
        JOIN users u1 ON u1.id = t.buyer_id
@@ -38,6 +41,9 @@ export default async function ProfilePage({ searchParams }) {
         listingImage: row.listingImage,
         amount: row.amount,
         status: row.status,
+        paymentMethod: row.paymentMethod ?? 'stripe',
+        opayPaymentId: row.opayPaymentId ?? null,
+        opayStatus: row.opayStatus ?? null,
         createdAt: row.createdAt,
         completedAt: row.completedAt,
         counterpartyId: isPurchase ? row.sellerId : row.buyerId,
@@ -51,6 +57,7 @@ export default async function ProfilePage({ searchParams }) {
         sales: txRows.filter((t) => t.sellerId === user.id).map((t) => toView(t, false)),
         reviews,
         rating,
+        sellerPayments: fetchSellerPayments(user.id),
     };
 
     // Safety Bot status for the restriction banner.

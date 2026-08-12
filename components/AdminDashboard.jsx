@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatDate, formatPrice, initials, timeAgo } from '@/lib/format';
 import { CATEGORY_EMOJIS, CATEGORY_LABELS } from '@/lib/types';
+import { OPAY_STATUS_LABELS, ngnEstimate } from '@/lib/opay-shared';
 import { useToast } from './Toaster';
 import StarRating from './StarRating';
 import {
@@ -14,6 +15,8 @@ import {
 
 const TABS = [
     { key: 'overview', label: 'Overview' },
+    { key: 'opay', label: 'OPay Payouts' },
+    { key: 'refunds', label: 'Refunds' },
     { key: 'listings', label: 'Listings' },
     { key: 'transactions', label: 'Transactions' },
     { key: 'users', label: 'Users' },
@@ -27,6 +30,8 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
     const [transactions, setTransactions] = useState(initial.transactions);
     const [users, setUsers] = useState(initial.users);
     const [overview, setOverview] = useState(initial.overview);
+    const [opayPayments, setOpayPayments] = useState(initial.opayPayments ?? []);
+    const [refunds, setRefunds] = useState(initial.refunds ?? []);
     const [lq, setLq] = useState('');
     const [tq, setTq] = useState('');
     const [uq, setUq] = useState('');
@@ -73,7 +78,9 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
     const runAction = async (url, opts, successMsg) => {
         setLoadingId(opts.loadingId);
         try {
-            const res = await fetch(url, opts.fetch);
+            // Callers either pass a full custom `fetch` option or just a `method`;
+            // derive the request shape so actions actually hit the right verb.
+            const res = await fetch(url, opts.fetch || { method: opts.method });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 toast(data.error || 'Request failed.', 'error');
@@ -96,16 +103,19 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
     };
 
     const refreshData = async () => {
-        const [o, l, t, u] = await Promise.all([
+        const [o, l, t, u, p] = await Promise.all([
             fetch('/api/admin/overview').then((r) => r.json()),
             fetch('/api/admin/listings').then((r) => r.json()),
             fetch('/api/admin/transactions').then((r) => r.json()),
             fetch('/api/admin/users').then((r) => r.json()),
+            fetch('/api/admin/opay').then((r) => r.json()),
         ]);
         if (o.overview) setOverview(o.overview);
         if (l.listings) setListings(l.listings);
         if (t.transactions) setTransactions(t.transactions);
         if (u.users) setUsers(u.users);
+        if (p.payments) setOpayPayments(p.payments);
+        if (p.refunds) setRefunds(p.refunds);
     };
 
     const deleteListing = async (id, title) => {
@@ -160,6 +170,43 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
     };
 
     const escrowValue = overview.escrowValue ?? 0;
+
+    const completeOpay = async (payment) => {
+        if (!window.confirm(`Mark payment #${payment.id} (${formatPrice(payment.amount)}) as PAID to ${payment.sellerName}? Only do this after you have transferred the money from your OPay account.`)) return;
+        await runAction(`/api/admin/opay/${payment.id}/complete`, {
+            method: 'POST',
+            loadingId: `opay-${payment.id}`,
+            onSuccess: () => setOpayPayments((prev) => prev.map((p) => (p.id === payment.id ? { ...p, status: 'paid' } : p))),
+        }, 'Payout marked as sent — seller notified. 💸');
+    };
+
+    const resolveRefund = async (refund, approve) => {
+        if (!window.confirm(approve ? `APPROVE the refund for ${refund.buyerName} (${formatPrice(refund.amount)})? You will transfer the money back from your OPay account.` : `Reject the refund request from ${refund.buyerName}?`)) return;
+        await runAction(`/api/admin/refunds/${refund.id}`, {
+            method: 'PUT',
+            fetch: { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approve }) },
+            loadingId: `rf-${refund.id}`,
+            onSuccess: () => setRefunds((prev) => prev.map((r) => (r.id === refund.id ? { ...r, status: approve ? 'approved' : 'rejected' } : r))),
+        }, approve ? 'Refund approved — buyer and seller notified.' : 'Refund request rejected.');
+    };
+
+    const chatBuyer = async (buyerId, listingId) => {
+        setLoadingId(`cb-${buyerId}`);
+        try {
+            const res = await fetch('/api/admin/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: buyerId, listingId }),
+            });
+            const data = await res.json();
+            if (!res.ok) return toast(data.error || 'Could not open a chat.', 'error');
+            router.push(`/chat?chat=${data.chat.id}`);
+        } catch {
+            toast('Network error. Please try again.', 'error');
+        } finally {
+            setLoadingId(null);
+        }
+    };
 
     /* -------------------------------- render ------------------------------ */
     return (
@@ -290,6 +337,7 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
                                         <span className="min-w-0">
                                             <span className="flex flex-wrap items-center gap-2">
                                                 <span className="truncate text-sm font-bold text-charcoal-950">{t.listingTitle}</span>
+                                                {t.paymentMethod === 'opay' && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">OPay</span>}
                                                 {t.status === 'escrow_hold'
                                                     ? <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-inset ring-amber-200"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Escrow hold</span>
                                                     : <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200"><IconCheck className="h-3 w-3" /> Completed</span>}
@@ -301,7 +349,7 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
                                             <span className="mt-1 block text-sm font-bold text-charcoal-900">{formatPrice(t.amount)} <span className="text-[11px] font-semibold text-charcoal-400">· 5% fee {formatPrice(t.fee)} · seller gets {formatPrice(t.payout)}</span></span>
                                         </span>
                                     </Link>
-                                    {t.status === 'escrow_hold' && (
+                                    {t.status === 'escrow_hold' && t.paymentMethod !== 'opay' && (
                                         <div className="flex shrink-0 flex-wrap items-center gap-2">
                                             <button onClick={() => releaseEscrow(t.id)} disabled={loadingId === `tx-${t.id}`}
                                                 className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-emerald transition hover:bg-emerald-500 active:scale-95 disabled:opacity-60">
@@ -310,6 +358,124 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
                                             <button onClick={() => refundTransaction(t.id)} disabled={loadingId === `tx-${t.id}`}
                                                 className="inline-flex items-center gap-1.5 rounded-full bg-charcoal-950 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-amber-600 active:scale-95 disabled:opacity-60">
                                                 Refund
+                                            </button>
+                                        </div>
+                                    )}
+                                    {t.status === 'escrow_hold' && t.paymentMethod === 'opay' && (
+                                        <Link href="/admin?tab=opay" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-emerald transition hover:bg-emerald-500 active:scale-95">
+                                            🏦 Manage in OPay Payouts
+                                        </Link>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* ------------------------- OPAY PAYOUTS ----------------------- */}
+                {tab === 'opay' && (
+                    <div className="space-y-3">
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 text-sm leading-relaxed text-amber-800">
+                            💡 <span className="font-bold">“Admin not active?” No problem.</span> Everything you need to pay sellers from your OPay account is right here — every seller's account number, what's owed, and whether the buyer already confirmed delivery. Transfer from your OPay app, then tap <span className="font-bold">Mark as Paid</span>.
+                        </div>
+                        {opayPayments.length === 0 && (
+                            <div className="rounded-3xl border border-dashed border-charcoal-200 bg-white px-6 py-14 text-center text-sm text-charcoal-400">No OPay payments yet.</div>
+                        )}
+                        {opayPayments.map((p) => (
+                            <div key={p.id} className="rounded-2xl border border-charcoal-100 bg-white p-4 shadow-soft">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                                        {p.listingImage ? <img src={p.listingImage} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover" /> : <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-2xl">🏦</span>}
+                                        <div className="min-w-0 flex-1">
+                                            <span className="flex flex-wrap items-center gap-2">
+                                                <span className="truncate text-sm font-bold text-charcoal-950">{p.listingTitle}</span>
+                                                {p.status === 'buyer_approved' ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white">✓ Buyer approved — got the product</span>
+                                                ) : p.status === 'buyer_paid' ? (
+                                                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-inset ring-amber-200">Buyer paid — awaiting seller account</span>
+                                                ) : (
+                                                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">{OPAY_STATUS_LABELS[p.status] ?? p.status}</span>
+                                                )}
+                                            </span>
+                                            <span className="mt-0.5 block text-xs text-charcoal-400">
+                                                #{p.id} · <span className="font-semibold text-charcoal-600">{p.buyerName}</span> (buyer) → <span className="font-semibold text-charcoal-600">{p.sellerName}</span> (seller) · {formatPrice(p.amount)} · ≈₦{ngnEstimate(p.amount).toLocaleString()} · {formatDate(p.createdAt)}
+                                            </span>
+                                            {p.buyerNote && <span className="mt-0.5 block text-xs text-charcoal-400">Buyer note: “{p.buyerNote}”</span>}
+                                            <div className="mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 px-3.5 py-2.5">
+                                                <span className="text-xs font-bold text-emerald-800">Pay to:</span>
+                                                <span className="font-black tracking-widest text-charcoal-950">{p.accountNumber ?? '— no account yet'}</span>
+                                                {p.accountHolder && <span className="text-xs font-semibold text-charcoal-600">{p.accountHolder}</span>}
+                                                {p.status === 'buyer_approved' && (
+                                                    <span className="ml-auto text-[11px] font-black text-emerald-700">READY TO TRANSFER ✓</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {p.status === 'buyer_approved' && (
+                                        <button onClick={() => completeOpay(p)} disabled={loadingId === `opay-${p.id}`}
+                                            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-emerald transition hover:bg-emerald-500 active:scale-95 disabled:opacity-60">
+                                            <IconCheck className="h-3.5 w-3.5" /> {loadingId === `opay-${p.id}` ? 'Working…' : 'Mark as Paid (I transferred)'}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* --------------------------- REFUNDS --------------------------- */}
+                {tab === 'refunds' && (
+                    <div className="space-y-3">
+                        {refunds.length === 0 && (
+                            <div className="rounded-3xl border border-dashed border-charcoal-200 bg-white px-6 py-14 text-center text-sm text-charcoal-400">No refund requests yet.</div>
+                        )}
+                        {refunds.map((r) => (
+                            <div key={r.id} className="rounded-2xl border border-charcoal-100 bg-white p-4 shadow-soft">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="truncate text-sm font-bold text-charcoal-950">{r.buyerName} requested a refund</span>
+                                            {r.status === 'submitted' ? (
+                                                <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700 ring-1 ring-inset ring-red-200">Needs review</span>
+                                            ) : (
+                                                <span className="rounded-full bg-charcoal-100 px-2.5 py-1 text-[11px] font-bold text-charcoal-600">{r.status}</span>
+                                            )}
+                                        </div>
+                                        <p className="mt-0.5 text-xs text-charcoal-400">
+                                            for “{r.listingTitle}” · {formatPrice(r.amount)} · sold by {r.sellerName} · {formatDate(r.createdAt)}
+                                        </p>
+                                        <p className="mt-2 rounded-xl bg-charcoal-50/60 px-3.5 py-2.5 text-sm leading-relaxed text-charcoal-700">{r.reason}</p>
+                                        {r.refundAccount && (
+                                            <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/50 px-3.5 py-2 text-xs">
+                                                <span className="font-bold text-emerald-800">Refund to:</span>
+                                                <span className="font-black tracking-widest text-charcoal-950">{r.refundAccount}</span>
+                                                <span className="text-[11px] font-semibold text-emerald-700">(OPay / local transfer)</span>
+                                            </div>
+                                        )}
+                                        {r.botAnswers.length > 0 && (
+                                            <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/40 px-3.5 py-2.5">
+                                                <p className="text-[10px] font-black uppercase tracking-wide text-emerald-600">Safety Bot interview</p>
+                                                <div className="mt-1.5 space-y-1">
+                                                    {r.botAnswers.map((a, i) => (
+                                                        <p key={i} className="text-xs text-charcoal-600"><span className="font-bold text-charcoal-800">{a.q}</span> → <span className="font-semibold text-emerald-700">{a.a}</span></p>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {r.status === 'submitted' && (
+                                        <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                            <button onClick={() => chatBuyer(r.buyerId, r.listingId)} disabled={loadingId === `cb-${r.buyerId}`}
+                                                className="inline-flex items-center gap-1.5 rounded-full bg-charcoal-950 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-charcoal-800 active:scale-95 disabled:opacity-60">
+                                                💬 Chat buyer
+                                            </button>
+                                            <button onClick={() => resolveRefund(r, false)} disabled={loadingId === `rf-${r.id}`}
+                                                className="inline-flex items-center gap-1.5 rounded-full border border-charcoal-200 bg-white px-4 py-2.5 text-xs font-bold text-charcoal-700 transition hover:bg-charcoal-50 active:scale-95 disabled:opacity-60">
+                                                Reject
+                                            </button>
+                                            <button onClick={() => resolveRefund(r, true)} disabled={loadingId === `rf-${r.id}`}
+                                                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-emerald transition hover:bg-emerald-500 active:scale-95 disabled:opacity-60">
+                                                <IconCheck className="h-3.5 w-3.5" /> Approve & Refund
                                             </button>
                                         </div>
                                     )}

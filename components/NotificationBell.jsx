@@ -62,6 +62,16 @@ export default function NotificationBell({ user }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // If the user already allowed notifications, silently re-subscribe this
+  // device to background push on next visit (no prompt).
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      subscribePush();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Close the dropdown on outside click / route change.
   useEffect(() => {
     const onClick = (e) => {
@@ -72,6 +82,41 @@ export default function NotificationBell({ user }) {
   }, []);
   useEffect(() => setOpen(false), [pathname]);
 
+  // Subscribe this browser to real background push (works when the site is closed).
+  const subscribePush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub =
+        (await reg.pushManager.getSubscription()) ||
+        (await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        }));
+      if (sub) {
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: sub.toJSON() }),
+        });
+      }
+    } catch { /* push not available (e.g. no VAPID key set) — in-app alerts still work */ }
+  };
+
+  const unsubscribePush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch('/api/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+    } catch { /* best effort */ }
+  };
+
   const enable = async () => {
     if (!('Notification' in window)) {
       toast('This browser does not support notifications.', 'info');
@@ -80,7 +125,7 @@ export default function NotificationBell({ user }) {
     const p = await Notification.requestPermission();
     setPerm(p);
     if (p === 'granted') {
-      toast('Notifications enabled — you will hear about payments and payouts! 🔔');
+      toast('Notifications enabled — you will hear about payments and payouts, even when the site is closed! 🔔');
       try {
         await fetch('/api/users/me', {
           method: 'PATCH',
@@ -89,6 +134,7 @@ export default function NotificationBell({ user }) {
         });
         router.refresh();
       } catch { /* non-fatal */ }
+      await subscribePush();
     }
   };
 

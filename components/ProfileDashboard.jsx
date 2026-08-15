@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatDate, formatPrice, initials } from '@/lib/format';
 import { OPAY_STATUS_LABELS } from '@/lib/opay-shared';
+import { useCurrency } from './CurrencyProvider';
 import { useToast } from './Toaster';
 import StarRating from './StarRating';
 import VerifiedBadge from './VerifiedBadge';
@@ -33,6 +34,7 @@ const HUB_TABS = {
 export default function ProfileDashboard({ user, initial, initialTab = 'listings' }) {
   const router = useRouter();
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const [tab, setTab] = useState(initialTab);
   const [hub, setHub] = useState(user.role && user.role !== 'both' ? user.role : 'both');
   const [reviewTarget, setReviewTarget] = useState(null);
@@ -309,7 +311,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">Active</span>
                       )}
                     </span>
-                    <span className="mt-0.5 block text-sm text-charcoal-400">{formatPrice(l.price)} · {l.seller.neighborhood}</span>
+                    <span className="mt-0.5 block text-sm text-charcoal-400">{formatPrice(l.price, currency)} · {l.seller.neighborhood}</span>
                   </span>
                 </Link>
                 <div className="flex shrink-0 items-center gap-2">
@@ -343,7 +345,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
                           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">OPay</span>
                         )}
                       </span>
-                      <span className="mt-0.5 block text-sm text-charcoal-400">from {t.counterpartyName} · {formatPrice(t.amount)} · {formatDate(t.createdAt)}</span>
+                      <span className="mt-0.5 block text-sm text-charcoal-400">from {t.counterpartyName} · {formatPrice(t.amount, currency)} · {formatDate(t.createdAt)}</span>
                       {t.paymentMethod === 'opay' ? (
                         opayPill(t.opayStatus)
                       ) : t.status === 'escrow_hold' ? (
@@ -391,7 +393,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
                 </div>
                 {t.paymentMethod === 'opay' && t.opayStatus === 'buyer_paid' && t.amount > 0 && (
                   <p className="mt-3 rounded-xl bg-charcoal-50/60 px-3.5 py-2.5 text-xs leading-relaxed text-charcoal-500">
-                    💰 <span className="font-bold text-charcoal-800">{formatPrice(t.amount)}</span> is locked in escrow. The seller will add their payout account, then you confirm delivery — 95% goes to the seller, 5% is the TownTrade fee.
+                    💰 <span className="font-bold text-charcoal-800">{formatPrice(t.amount, currency)}</span> is locked in escrow. The seller will add their payout account, then you confirm delivery — 95% goes to the seller, 5% is the TownTrade fee.
                   </p>
                 )}
               </div>
@@ -413,7 +415,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
                     {t.listingTitle}
                     {t.paymentMethod === 'opay' && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">OPay</span>}
                   </p>
-                  <p className="text-xs text-charcoal-400">Sold to {t.counterpartyName} · {formatPrice(t.amount)} · {formatDate(t.createdAt)}</p>
+                  <p className="text-xs text-charcoal-400">Sold to {t.counterpartyName} · {formatPrice(t.amount, currency)} · {formatDate(t.createdAt)}</p>
                   {t.paymentMethod === 'opay' ? (
                     (() => {
                       const m = {
@@ -430,11 +432,11 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
                     })()
                   ) : t.status === 'escrow_hold' ? (
                     <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-700 ring-1 ring-inset ring-amber-200">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> {formatPrice(t.amount)} pending in escrow
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> {formatPrice(t.amount, currency)} pending in escrow
                     </span>
                   ) : (
                     <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                      <IconCheck className="h-3 w-3" /> Paid out {formatPrice(Math.round(t.amount * 0.95))}
+                      <IconCheck className="h-3 w-3" /> Paid out {formatPrice(Math.round(t.amount * 0.95), currency)}
                     </span>
                   )}
                 </div>
@@ -470,7 +472,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
               <div key={r.id} className="rounded-2xl border border-charcoal-100 bg-white p-4 shadow-soft">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 text-xs font-bold text-white">{initials(r.reviewerName)}</span>
+                    {r.reviewerAvatar ? <img src={r.reviewerAvatar} alt={r.reviewerName} className="h-9 w-9 rounded-full object-cover" /> : <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 text-xs font-bold text-white">{initials(r.reviewerName)}</span>}
                     <div>
                       <p className="text-sm font-bold text-charcoal-950">{r.reviewerName}</p>
                       {r.listingTitle && <p className="text-[11px] text-charcoal-400">about “{r.listingTitle}”</p>}
@@ -512,7 +514,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-semibold uppercase tracking-wide text-charcoal-400">Lifetime payouts</p>
-                      <p className="text-lg font-extrabold text-emerald-600">{formatPrice(data.paidOut)}</p>
+                      <p className="text-lg font-extrabold text-emerald-600">{formatPrice(data.paidOut, currency)}</p>
                     </div>
                   </div>
                 ) : (
@@ -548,7 +550,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
                       <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-2.5">
                         <div className="min-w-0">
                           <p className="truncate text-xs font-bold text-charcoal-900">{p.listingTitle}</p>
-                          <p className="text-[11px] text-charcoal-400">{formatPrice(p.amount)} · {OPAY_STATUS_LABELS[p.status] ?? p.status}</p>
+                          <p className="text-[11px] text-charcoal-400">{formatPrice(p.amount, currency)} · {OPAY_STATUS_LABELS[p.status] ?? p.status}</p>
                         </div>
                         {p.status === 'buyer_paid' ? (
                           <button
@@ -571,7 +573,7 @@ export default function ProfileDashboard({ user, initial, initialTab = 'listings
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl border border-charcoal-100 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-charcoal-400">In escrow</p>
-                  <p className="mt-1 text-xl font-extrabold text-charcoal-950">{formatPrice(data.escrowValue)}</p>
+                  <p className="mt-1 text-xl font-extrabold text-charcoal-950">{formatPrice(data.escrowValue, currency)}</p>
                 </div>
                 <div className="rounded-2xl border border-charcoal-100 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-charcoal-400">Platform fee</p>

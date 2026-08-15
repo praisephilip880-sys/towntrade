@@ -55,11 +55,16 @@ export async function PATCH(req) {
         updates.push('notifications_enabled = ?');
         params.push(body.notificationsEnabled ? 1 : 0);
     }
+    // Preferred display currency (ISO 4217 code).
+    if (typeof body.currency === 'string' && /^[A-Za-z]{3}$/.test(body.currency)) {
+        updates.push('currency = ?');
+        params.push(body.currency.toUpperCase());
+    }
     if (updates.length) {
         db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params, user.id);
     }
     const row = db
-        .prepare('SELECT full_name, location_verified, bank_connected, avatar, role, notifications_enabled FROM users WHERE id = ?')
+        .prepare('SELECT full_name, location_verified, bank_connected, avatar, role, notifications_enabled, currency FROM users WHERE id = ?')
         .get(user.id);
     return NextResponse.json({
         user: {
@@ -70,6 +75,7 @@ export async function PATCH(req) {
             avatar: row.avatar ?? null,
             role: row.role ?? 'both',
             notificationsEnabled: row.notifications_enabled === 1,
+            currency: row.currency ?? 'USD',
         },
     });
 }

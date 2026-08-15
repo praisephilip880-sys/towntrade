@@ -3,9 +3,10 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { formatDate, formatPrice, initials, timeAgo } from '@/lib/format';
+import { formatDate, formatPrice as baseFormatPrice, initials, timeAgo } from '@/lib/format';
 import { CATEGORY_EMOJIS, CATEGORY_LABELS } from '@/lib/types';
 import { OPAY_STATUS_LABELS, ngnEstimate } from '@/lib/opay-shared';
+import { useCurrency } from './CurrencyProvider';
 import { useToast } from './Toaster';
 import StarRating from './StarRating';
 import {
@@ -25,6 +26,9 @@ const TABS = [
 export default function AdminDashboard({ user, initial, initialTab = 'overview' }) {
     const router = useRouter();
     const { toast } = useToast();
+    const { currency } = useCurrency();
+    // All prices on the admin panel render in the admin's chosen currency.
+    const formatPrice = (cents) => baseFormatPrice(cents, currency);
     const [tab, setTab] = useState(initialTab);
     const [listings, setListings] = useState(initial.listings);
     const [transactions, setTransactions] = useState(initial.transactions);
@@ -254,7 +258,7 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
                             <MiniStat label="Chats" value={overview.chats} sub={`${overview.safetyEvents} safety alerts`} />
                         </div>
                         <div className="grid gap-3 lg:grid-cols-2">
-                            <RevenueChart series={overview.revenueSeries ?? []} total={overview.revenueTotal ?? 0} />
+                            <RevenueChart series={overview.revenueSeries ?? []} total={overview.revenueTotal ?? 0} currency={currency} />
                             <RecentLogins logins={overview.recentLogins ?? []} />
                         </div>
                         <div className="rounded-3xl border border-charcoal-100 bg-white p-6 shadow-soft">
@@ -498,7 +502,7 @@ export default function AdminDashboard({ user, initial, initialTab = 'overview' 
                         {filteredUsers.map((u) => (
                             <div key={u.id} className="flex flex-col gap-4 rounded-2xl border border-charcoal-100 bg-white p-4 shadow-soft sm:flex-row sm:items-center">
                                 <div className="flex min-w-0 flex-1 items-center gap-4">
-                                    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${u.isAdmin ? 'bg-charcoal-950' : 'bg-gradient-to-br from-emerald-500 to-emerald-700'}`}>{initials(u.fullName)}</span>
+                                    {u.avatar ? <img src={u.avatar} alt={u.fullName} className="h-12 w-12 shrink-0 rounded-full object-cover" /> : <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${u.isAdmin ? 'bg-charcoal-950' : 'bg-gradient-to-br from-emerald-500 to-emerald-700'}`}>{initials(u.fullName)}</span>}
                                     <span className="min-w-0">
                                         <span className="flex flex-wrap items-center gap-2">
                                             <span className="truncate text-sm font-bold text-charcoal-950">{u.fullName}</span>
@@ -560,8 +564,9 @@ function MiniStat({ label, value, sub }) {
     );
 }
 
-function RevenueChart({ series, total }) {
+function RevenueChart({ series, total, currency = 'USD' }) {
     const max = Math.max(1, ...series.map((b) => b.value));
+    const formatPrice = (cents) => baseFormatPrice(cents, currency);
     return (
         <div className="rounded-3xl border border-charcoal-100 bg-white p-5 shadow-soft">
             <div className="flex items-end justify-between gap-2">

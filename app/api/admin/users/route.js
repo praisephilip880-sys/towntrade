@@ -14,7 +14,7 @@ export async function GET(req) {
     const q = (url.searchParams.get('q') ?? '').trim();
     const rows = db
         .prepare(`SELECT
-         u.id, u.full_name AS fullName, u.email, u.neighborhood, u.location_verified AS locationVerified,
+         u.id, u.full_name AS fullName, u.email, u.neighborhood, u.avatar, u.location_verified AS locationVerified,
          u.bank_connected AS bankConnected, u.is_admin AS isAdmin, u.safety_flags AS safetyFlags,
          u.selling_restricted_until AS sellingRestrictedUntil, u.created_at AS createdAt,
          (SELECT COUNT(*) FROM listings l WHERE l.user_id = u.id) AS listingCount,
@@ -32,6 +32,7 @@ export async function GET(req) {
         fullName: r.fullName,
         email: r.email,
         neighborhood: r.neighborhood,
+        avatar: r.avatar ?? null,
         locationVerified: r.locationVerified === 1,
         bankConnected: r.bankConnected === 1,
         isAdmin: r.isAdmin === 1,

@@ -2,9 +2,11 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useCallback, useEffect, useState } from 'react';
 import { formatPrice, initials, timeAgo } from '@/lib/format';
+import { useCurrency } from './CurrencyProvider';
 import { IconArrowRight, IconBolt, IconCheck, IconUser, IconUsers } from './icons';
 
 export default function CommunityPulse({ initial }) {
+    const { currency } = useCurrency();
     const [data, setData] = useState(initial);
     const [alive, setAlive] = useState(true);
 
@@ -49,7 +51,7 @@ export default function CommunityPulse({ initial }) {
                     <PulseStat icon={<IconBolt className="h-4 w-4" />} value={stats ? (stats.listings ?? 0).toLocaleString() : '—'} label="Items & gigs listed" accent />
                     <PulseStat icon={<IconUsers className="h-4 w-4" />} value={stats ? (stats.verifiedNeighbors ?? 0).toLocaleString() : '—'} label="Verified neighbors" />
                     <PulseStat icon={<IconCheck className="h-4 w-4" />} value={stats ? (stats.tradesCompleted ?? 0).toLocaleString() : '—'} label="Trades completed" />
-                    <PulseStat icon={<IconArrowRight className="h-4 w-4" />} value={stats ? formatPrice(stats.localEconomy ?? 0) : '—'} label="Kept in the local economy" accent />
+                    <PulseStat icon={<IconArrowRight className="h-4 w-4" />} value={stats ? formatPrice(stats.localEconomy ?? 0, currency) : '—'} label="Kept in the local economy" accent />
                 </div>
 
                 <div className="mt-8 grid gap-6 lg:grid-cols-5">
@@ -97,7 +99,7 @@ export default function CommunityPulse({ initial }) {
                                 <p className="mt-1 text-xs text-charcoal-400">TownTrade's 5% platform fee on completed trades — real transactions only.</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-2xl font-black tracking-tight text-emerald-600">{formatPrice(totalRevenue)}</p>
+                                <p className="text-2xl font-black tracking-tight text-emerald-600">{formatPrice(totalRevenue, currency)}</p>
                                 <p className="text-[10px] font-semibold uppercase tracking-wide text-charcoal-400">all-time platform fees</p>
                             </div>
                         </div>
@@ -105,7 +107,7 @@ export default function CommunityPulse({ initial }) {
                             {series.map((b, i) => (
                                 <div key={i} className="group relative flex h-full flex-1 flex-col justify-end">
                                     <div className="pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg bg-charcoal-950 px-2 py-1 text-[10px] font-bold text-white opacity-0 transition group-hover:opacity-100">
-                                        {formatPrice(b.value)}
+                                        {formatPrice(b.value, currency)}
                                     </div>
                                     <div
                                         className="w-full rounded-t-md bg-emerald-500/70 transition-all duration-300 group-hover:bg-emerald-600"

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatPrice, formatTime, initials, timeAgo } from '@/lib/format';
 import { BOT_USER_ID, SAFETY_BOT_NAME } from '@/lib/safety';
+import { useCurrency } from './CurrencyProvider';
 import { useToast } from './Toaster';
 import VerifiedBadge from './VerifiedBadge';
 import { IconArrowRight, IconChat, IconSend, IconShield } from './icons';
@@ -18,6 +19,7 @@ export default function ChatApp({
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  const { currency } = useCurrency();
 
   const [chats, setChats] = useState(initialChats);
   const [activeId, setActiveId] = useState(initialChatId);
@@ -261,7 +263,7 @@ export default function ChatApp({
                       {c.lastMessage ?? <span className="italic text-charcoal-300">Say hello about “{c.listingTitle}”</span>}
                     </span>
                     <span className="mt-0.5 block truncate text-[10px] font-medium text-emerald-600">
-                      {c.listingTitle} · {formatPrice(c.listingPrice)}
+                      {c.listingTitle} · {formatPrice(c.listingPrice, currency)}
                     </span>
                   </span>
                 </button>
@@ -296,9 +298,13 @@ export default function ChatApp({
                     <path d="M19 12H5m6 6-6-6 6-6" />
                   </svg>
                 </button>
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${active.otherIsAdmin ? 'bg-charcoal-950' : 'bg-gradient-to-br from-emerald-400 to-emerald-700'}`}>
-                  {initials(active.otherIsAdmin ? 'TownTrade Admin' : active.otherName)}
-                </span>
+                {active.otherAvatar ? (
+                  <img src={active.otherAvatar} alt={active.otherName} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${active.otherIsAdmin ? 'bg-charcoal-950' : 'bg-gradient-to-br from-emerald-400 to-emerald-700'}`}>
+                    {initials(active.otherIsAdmin ? 'TownTrade Admin' : active.otherName)}
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-1.5 text-sm font-bold text-charcoal-950">
                     {active.otherIsAdmin ? 'TownTrade Admin' : active.otherName}

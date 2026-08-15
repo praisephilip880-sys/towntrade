@@ -57,9 +57,13 @@ export default function Testimonials() {
                                     “{r.comment}”
                                 </blockquote>
                                 <figcaption className="mt-5 flex items-center gap-3 border-t border-charcoal-100 pt-4">
-                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-xs font-bold text-white">
-                                        {initialsOf(r.reviewerName)}
-                                    </span>
+                                    {r.reviewerAvatar ? (
+                                        <img src={r.reviewerAvatar} alt={r.reviewerName} className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                                    ) : (
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-xs font-bold text-white">
+                                            {initialsOf(r.reviewerName)}
+                                        </span>
+                                    )}
                                     <span className="min-w-0">
                                         <span className="block truncate text-sm font-extrabold text-charcoal-950">{r.reviewerName}</span>
                                         <span className="block text-xs text-charcoal-400">📍 {r.neighborhood}</span>

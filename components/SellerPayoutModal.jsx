@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { formatPrice } from '@/lib/format';
+import { useCurrency } from './CurrencyProvider';
 import { useToast } from './Toaster';
 import { IconShield, IconX } from './icons';
 
@@ -12,6 +13,7 @@ import { IconShield, IconX } from './icons';
  */
 export default function SellerPayoutModal({ payment, onClose, onDone }) {
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
   const [busy, setBusy] = useState(false);
@@ -68,7 +70,7 @@ export default function SellerPayoutModal({ payment, onClose, onDone }) {
           </span>
           <div>
             <h2 className="text-lg font-black tracking-tight text-charcoal-950">Receive your payout</h2>
-            <p className="text-xs text-charcoal-400">{payment.listingTitle} · {formatPrice(payment.amount)}</p>
+            <p className="text-xs text-charcoal-400">{payment.listingTitle} · {formatPrice(payment.amount, currency)}</p>
           </div>
         </div>
 

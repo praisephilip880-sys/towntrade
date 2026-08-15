@@ -11,25 +11,32 @@ export const dynamic = 'force-dynamic';
  *   to the owner's WhatsApp DM.
  */
 async function askLlm(message) {
-  const base = process.env.AI_API_BASE || 'https://api.openai.com/v1';
-  const model = process.env.AI_MODEL || 'gpt-4o-mini';
-  const key = process.env.AI_API_KEY;
+  const key = process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY;
+  if (!key) return null;
+  const base = process.env.AI_API_BASE || 'https://api.openrouter.ai';
+  const model = process.env.AI_MODEL || 'meta-llama/llama-3.3-70b-instruct:free';
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` };
+  // OpenRouter likes to know where traffic comes from (free-tier friendly).
+  if (base.includes('openrouter')) {
+    headers['HTTP-Referer'] = process.env.APP_URL || 'https://towntrade-three.vercel.app';
+    headers['X-Title'] = 'TownTrade';
+  }
   const res = await fetch(`${base}/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    headers,
     body: JSON.stringify({
       model,
-      max_tokens: 220,
+      max_tokens: 240,
       messages: [
         {
           role: 'system',
           content:
-            'You are the TownTrade AI assistant for a local neighborhood marketplace. Answer helpfully and briefly (under 120 words). TownTrade: 5% platform fee, 95% to sellers, escrow-protected payments, OPay local transfers, Safety Bot watches chats for scams, WhatsApp support available. If the user asks for human help or you cannot answer confidently, reply with EXACTLY the word ESCALATE on its own line.',
+            'You are the TownTrade AI assistant for a local neighborhood marketplace. Answer helpfully and briefly (under 120 words). Facts: TownTrade charges one flat 5% platform fee and sellers keep 95%; payments are escrow-protected until the buyer confirms delivery; buyers can pay by card (Stripe) or a local OPay transfer to the platform account 8121344178 (OPay, Mberekpe Praise Chineamerem); the Safety Bot watches chats for scams and blocks card/account/phone numbers; the admin is reachable on WhatsApp. If the user asks for a human, real-person help, or you cannot answer confidently, reply with EXACTLY the word ESCALATE on its own line.',
         },
         { role: 'user', content: String(message).slice(0, 1000) },
       ],
     }),
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) return null;
   const data = await res.json();
@@ -61,9 +68,10 @@ export async function POST(req) {
     });
   }
 
-  // Real AI when a key is configured, local engine otherwise.
+  // Real AI when a key is configured (OpenRouter or OpenAI-compatible), local
+  // intent engine otherwise — the assistant never goes silent.
   let answer = null;
-  if (process.env.AI_API_KEY) {
+  if (process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY) {
     try {
       answer = await askLlm(message);
     }

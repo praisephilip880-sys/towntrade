@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/format';
 import { OPAY_ACCOUNT, ngnEstimate } from '@/lib/opay-shared';
+import { useCurrency } from './CurrencyProvider';
 import { useToast } from './Toaster';
 import { IconCard, IconCheck, IconShield, IconX } from './icons';
 
@@ -12,10 +13,11 @@ import { IconCard, IconCheck, IconShield, IconX } from './icons';
  *   • Card (Stripe Checkout, escrow protected)
  *   • OPay local transfer (pay the platform account, then confirm)
  */
-export default function PaymentModal({ listing, onClose }) {
+export default function PaymentModal({ listing, onClose, initialStep = 'choose' }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [step, setStep] = useState('choose'); // choose | opay | success
+  const { currency } = useCurrency();
+  const [step, setStep] = useState(initialStep); // choose | opay | success
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState('');
@@ -76,7 +78,7 @@ export default function PaymentModal({ listing, onClose }) {
     } catch { /* clipboard unavailable */ }
   };
 
-  const usd = formatPrice(listing.price);
+  const price = formatPrice(listing.price, currency);
 
   return (
     <div
@@ -97,7 +99,7 @@ export default function PaymentModal({ listing, onClose }) {
             <div className="mb-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-600">Secure checkout</div>
             <h2 className="text-xl font-black tracking-tight text-charcoal-950">{listing.title}</h2>
             <p className="mt-1 text-sm text-charcoal-400">
-              {usd} · escrow-protected — funds release to the seller only after you confirm delivery.
+              {price} · escrow-protected — funds release to the seller only after you confirm delivery.
             </p>
 
             <div className="mt-5 space-y-3">
@@ -118,14 +120,14 @@ export default function PaymentModal({ listing, onClose }) {
 
               <button
                 onClick={() => setStep('opay')}
-                className="group flex w-full items-center gap-4 rounded-2xl border-2 border-charcoal-200 bg-white p-4 text-left transition hover:border-emerald-500 hover:bg-emerald-50/40"
+                className="group flex w-full items-center gap-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50/60 p-4 text-left transition hover:border-emerald-500 hover:bg-emerald-50"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-xl transition group-hover:bg-emerald-600">🏦</span>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-xl text-white">🏦</span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-extrabold text-charcoal-950">Pay with OPay (Local Transfer)</span>
-                  <span className="block text-xs text-charcoal-400">No card needed · pay ~₦{ngnEstimate(listing.price).toLocaleString()} to the platform account</span>
+                  <span className="block text-xs font-semibold text-emerald-700">No card needed — transfer to {OPAY_ACCOUNT.number} · ≈₦{ngnEstimate(listing.price).toLocaleString()}</span>
                 </span>
-                <span className="text-xs font-bold text-emerald-600 group-hover:underline">Continue →</span>
+                <span className="text-xs font-bold text-emerald-700 group-hover:underline">Continue →</span>
               </button>
             </div>
 
@@ -143,7 +145,7 @@ export default function PaymentModal({ listing, onClose }) {
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-charcoal-100 bg-charcoal-50/50 p-3 text-center">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-charcoal-400">Amount</p>
-                <p className="mt-0.5 text-lg font-black text-charcoal-950">{usd}</p>
+                <p className="mt-0.5 text-lg font-black text-charcoal-950">{price}</p>
                 <p className="text-xs font-bold text-emerald-700">≈ ₦{ngnEstimate(listing.price).toLocaleString()}</p>
               </div>
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3 text-center">
@@ -211,7 +213,7 @@ export default function PaymentModal({ listing, onClose }) {
             </span>
             <h2 className="mt-4 text-xl font-black tracking-tight text-charcoal-950">Payment in escrow! 🎉</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-charcoal-500">
-              Your payment of <span className="font-bold text-emerald-700">{formatPrice(result.amount)}</span> is safely held.
+              Your payment of <span className="font-bold text-emerald-700">{formatPrice(result.amount, currency)}</span> is safely held.
               The seller has been notified and will add their payout details. Once you receive the item, confirm delivery
               and the seller gets paid — 95% of your money goes to them, 5% is the TownTrade fee.
             </p>

@@ -1,0 +1,14 @@
+{
+  "name": "TownTrade — Neighborhood Marketplace",
+  "short_name": "TownTrade",
+  "description": "Trade, earn, and connect right in your neighborhood. Escrow-protected payments, local OPay transfers, and a Safety Bot on every chat.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

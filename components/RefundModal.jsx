@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/format';
 import { REFUND_QUESTIONS } from '@/lib/opay-shared';
+import { useCurrency } from './CurrencyProvider';
 import { useToast } from './Toaster';
 import { IconShield, IconX } from './icons';
 
@@ -14,6 +15,7 @@ import { IconShield, IconX } from './icons';
 export default function RefundModal({ payment, onClose }) {
   const router = useRouter();
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [describe, setDescribe] = useState('');
@@ -103,7 +105,7 @@ export default function RefundModal({ payment, onClose }) {
               <div>
                 <h2 className="text-lg font-black tracking-tight text-charcoal-950">Request a refund</h2>
                 <p className="text-xs text-charcoal-400">
-                  {payment.listingTitle} · {formatPrice(payment.amount)} · Question {step + 1} of {REFUND_QUESTIONS.length}
+                  {payment.listingTitle} · {formatPrice(payment.amount, currency)} · Question {step + 1} of {REFUND_QUESTIONS.length}
                 </p>
               </div>
             </div>

@@ -45,6 +45,9 @@ export async function POST(req) {
     const description = typeof body.description === 'string' ? body.description.trim() : '';
     const category = body.category;
     const images = Array.isArray(body.images) ? body.images.filter((i) => typeof i === 'string') : [];
+    // The client always sends the price as USD cents (it converts the seller's
+    // chosen currency). Do NOT multiply by 100 here — that was the bug that
+    // stored $20 listings as $2,000 and rejected large local-currency prices.
     const price = typeof body.price === 'number' && Number.isFinite(body.price) ? body.price : 0;
     if (title.length < 3 || title.length > 100) {
         return NextResponse.json({ error: 'Title must be 3–100 characters.' }, { status: 400 });
@@ -58,8 +61,8 @@ export async function POST(req) {
     if (category === 'free') {
         // Free listings must stay free.
     }
-    else if (price < 0.5 || price > 100000) {
-        return NextResponse.json({ error: 'Price must be between $0.50 and $100,000.' }, { status: 400 });
+    else if (price < 50 || price > 10000000) {
+        return NextResponse.json({ error: 'Price must be between $0.50 and $100,000 USD.' }, { status: 400 });
     }
     if (images.length === 0) {
         return NextResponse.json({ error: 'Please add at least one photo.' }, { status: 400 });
@@ -72,10 +75,10 @@ export async function POST(req) {
             return NextResponse.json({ error: 'One of the uploads is not a valid image.' }, { status: 400 });
         }
         if (estimateBytes(img) > MAX_IMAGE_BYTES) {
-            return NextResponse.json({ error: 'One of the photos is too large (max ~1.5 MB after processing).' }, { status: 400 });
+            return NextResponse.json({ error: 'One of the photos is too large (max ~3 MB after processing).' }, { status: 400 });
         }
     }
-    const cents = category === 'free' ? 0 : Math.round(price * 100);
+    const cents = category === 'free' ? 0 : Math.round(price);
     const now = new Date().toISOString();
     const insert = db.transaction(() => {
         const result = db

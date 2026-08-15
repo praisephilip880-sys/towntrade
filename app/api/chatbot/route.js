@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
 async function askLlm(message) {
   const key = process.env.OPENROUTER_API_KEY || process.env.AI_API_KEY;
   if (!key) return null;
-  const base = process.env.AI_API_BASE || 'https://api.openrouter.ai';
-  const model = process.env.AI_MODEL || 'meta-llama/llama-3.3-70b-instruct:free';
+  const base = process.env.AI_API_BASE || 'https://openrouter.ai/api/v1';
+  const model = process.env.AI_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` };
   // OpenRouter likes to know where traffic comes from (free-tier friendly).
   if (base.includes('openrouter')) {
